@@ -1,17 +1,15 @@
-# List the cryptocurrencies you want to monitor. You can find valid IDs using the program
-# or from the CoinGecko API. Here are some common ones:
-# - bitcoin
-# - ethereum
-# - tether
-# - binancecoin
-# - usd-coin
-# - ripple
-# - solana
-# - cardano
-# - dogecoin
-# - tron
-
+# List of cryptocurrencies to monitor
 cryptocurrencies:
-  - bitcoin     # Example: Bitcoin
-  - ethereum    # Example: Ethereum
-  - tether      # Example: Tether
+  - bitcoin      # Bitcoin
+  - ethereum     # Ethereum
+  - tether       # Tether
+  - binancecoin  # Binance Coin
+  - usd-coin     # USD Coin
+  - ripple       # XRP
+  - solana       # Solana
+  - cardano      # Cardano
+  - dogecoin     # Dogecoin
+  - tron         # TRON
+
+# Auto-refresh interval in seconds (default: 180 seconds = 3 minutes)
+refresh_interval: 180
