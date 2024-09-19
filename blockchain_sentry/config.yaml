@@ -1,0 +1,17 @@
+# List the cryptocurrencies you want to monitor. You can find valid IDs using the program
+# or from the CoinGecko API. Here are some common ones:
+# - bitcoin
+# - ethereum
+# - tether
+# - binancecoin
+# - usd-coin
+# - ripple
+# - solana
+# - cardano
+# - dogecoin
+# - tron
+
+cryptocurrencies:
+  - bitcoin     # Example: Bitcoin
+  - ethereum    # Example: Ethereum
+  - tether      # Example: Tether
