@@ -1,5 +1,4 @@
 import tkinter as tk
-from tkinter import ttk
 import requests
 import yaml
 from datetime import datetime
@@ -28,14 +27,16 @@ def get_crypto_prices(selected_coins, update_callback, update_time_callback):
         response.raise_for_status()
         data = response.json()
 
+        # Format price output to align all "$" signs vertically
         result_text = ""
+        longest_coin = max(len(coin) for coin in selected_coins)  # Get the longest coin name for alignment
         for coin in selected_coins:
             coin_data = data.get(coin)
             if coin_data:
                 price = coin_data.get('usd')
-                result_text += f"Current {coin.capitalize()} price: ${price}\n"
+                result_text += f"{coin.capitalize().ljust(longest_coin)} : ${price:,.2f}\n"
             else:
-                result_text += f"Price data not available for {coin}\n"
+                result_text += f"{coin.capitalize().ljust(longest_coin)} : Price data not available\n"
 
         update_callback(result_text)
         last_refreshed_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -64,7 +65,7 @@ def on_submit():
 
 def open_price_view(selected_coins):
     """Updates the window to display cryptocurrency prices and sets up the refresh logic."""
-    root.title("BlockchainSentry - Price Monitor")
+    root.title("Blockchain Sentry")
 
     price_label = tk.Label(root, text="", justify="left", font=("Courier", 12), bg="black", fg="#00ff00")
     price_label.pack(pady=10, padx=10)
@@ -120,7 +121,7 @@ if not cryptocurrencies:
 
 # Main application window with Punk mode styling
 root = tk.Tk()
-root.title("Cryptocurrency Price Checker")
+root.title("Blockchain Sentry")
 root.configure(bg="black")  # Background color is black
 
 # Centering the window on the screen
