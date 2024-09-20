@@ -28,22 +28,12 @@ def get_crypto_prices(selected_coins, update_callback, update_time_callback):
         response.raise_for_status()
         data = response.json()
 
-        result_text = ""
-        longest_coin = max(len(coin) for coin in selected_coins)
-        for coin in selected_coins:
-            coin_data = data.get(coin)
-            if coin_data:
-                price = f"${coin_data.get('usd'):,.2f}"
-                result_text += f"{coin.capitalize().ljust(longest_coin)} {price}\n"
-            else:
-                result_text += f"{coin.capitalize().ljust(longest_coin)} Price data not available\n"
-
-        update_callback(result_text, data)
+        update_callback(data)
         last_refreshed_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         update_time_callback(f"Last refreshed: {last_refreshed_time}")
 
     except requests.exceptions.RequestException as e:
-        update_callback(f"Error fetching prices: {e}", {})
+        update_callback(f"Error fetching prices: {e}")
 
 
 # Close the application
@@ -56,73 +46,88 @@ def on_submit():
     selected_indices = listbox.curselection()
     selected_coins = [cryptocurrencies[i] for i in selected_indices]
 
+    # Display a warning message if no currencies are selected
     if not selected_coins:
-        result_label.config(text="No cryptocurrencies selected.")
+        result_label.config(text="Please select at least one cryptocurrency.", fg="#ff0000")  # Red warning text
         return
 
+    # Clear the warning if selections were made
+    result_label.config(text="")
+
     # Hide selection elements and show price view
-    listbox.pack_forget()
-    submit_button.pack_forget()
-    instruction_label.pack_forget()
+    selection_frame.pack_forget()
+
+    # Dynamically adjust window size based on the number of selected coins and content below
+    dynamic_height = 300 + (len(selected_coins) * 40) + 100  # Extra 100 for last refreshed and buttons
+    root.geometry(f"600x{dynamic_height}+300+200")
+
+    # Adjust width based on the longest text "Last refreshed" and "Next refresh"
+    longest_text_width = max(len("Last refreshed: YYYY-MM-DD HH:MM:SS"), len("Next refresh in: 00:00"))
+    dynamic_width = longest_text_width * 10  # Estimate character width
+    root.geometry(f"{dynamic_width + 100}x{dynamic_height}+300+200")  # Add 100 for padding
+
+    price_frame.pack(fill="both", expand=True)
 
     open_price_view(selected_coins)
 
 
 # Display cryptocurrency prices and set up refresh logic
 def open_price_view(selected_coins):
-    price_frame.pack(pady=10, padx=10)
+    # Clear previous price data in case the frame was already used
+    for widget in price_display_frame.winfo_children():
+        widget.destroy()
 
-    countdown_id = None  # Initialize countdown_id here
-
-    def update_price_display(text, data):
+    def update_price_display(data):
         """Updates the price display with the latest data."""
-        for widget in price_frame.winfo_children():
+        for widget in price_display_frame.winfo_children():
             widget.destroy()
 
         longest_coin = max(len(coin) for coin in selected_coins)
-        for coin in selected_coins:
+        for i, coin in enumerate(selected_coins):
             coin_data = data.get(coin)
             if coin_data:
                 price = f"${coin_data.get('usd'):,.2f}"
-                row_frame = tk.Frame(price_frame, bg="black")
-                coin_label = tk.Label(row_frame, text=coin.capitalize().ljust(longest_coin), font=("Courier", 12),
-                                      bg="black", fg="#00ff00")
-                coin_label.pack(side="left")
-                price_label = tk.Label(row_frame, text=price, font=("Courier", 12, "bold"), bg="black", fg="white")
-                price_label.pack(side="left", padx=10)
-                row_frame.pack(anchor="w")
+                # Create labels for coin name, symbol, and price
+                coin_label = tk.Label(price_display_frame, text=coin.capitalize(), font=("Courier", 12), bg="black",
+                                      fg="#00ff00")
+                symbol_label = tk.Label(price_display_frame, text="⚡", font=("Courier", 12, "bold"), bg="black",
+                                        fg="#00ff00")  # Cyberpunk/crypto symbol
+                price_label = tk.Label(price_display_frame, text=price, font=("Courier", 12, "bold"), bg="black",
+                                       fg="white")
+
+                # Place the labels in a grid, with reduced padding for tighter layout
+                coin_label.grid(row=i, column=0, padx=(40, 5), pady=5,
+                                sticky="e")  # Shift coin name slightly left, reduce right padding
+                symbol_label.grid(row=i, column=1, padx=5, pady=5)  # Reduce padding around the symbol
+                price_label.grid(row=i, column=2, padx=5, pady=5, sticky="w")  # Reduce padding for price
             else:
-                coin_label = tk.Label(price_frame,
-                                      text=f"{coin.capitalize().ljust(longest_coin)} Price data not available",
+                coin_label = tk.Label(price_display_frame, text=f"{coin.capitalize()} Price data not available",
                                       font=("Courier", 12), bg="black", fg="#00ff00")
-                coin_label.pack(anchor="w")
+                coin_label.grid(row=i, column=0, columnspan=3, pady=5)
 
     def update_last_refreshed_time(text):
         last_refreshed_label.config(text=text)
 
     def refresh_prices():
         """Fetches new prices and resets the countdown for the next refresh."""
-        nonlocal countdown_id
-        if countdown_id is not None:
-            root.after_cancel(countdown_id)
         get_crypto_prices(selected_coins, update_price_display, update_last_refreshed_time)
-        set_refresh_countdown(refresh_interval)
 
-    refresh_button = tk.Button(root, text="Manual Refresh", font=("Courier", 10, "bold"), bg="#00ff00", fg="black",
-                               relief="flat", command=refresh_prices)
-    refresh_button.pack(pady=10)
-
+    # Start the countdown for the next refresh
     def set_refresh_countdown(seconds_left):
-        nonlocal countdown_id
-        minutes, seconds = divmod(seconds_left, 60)
-        next_refresh_label.config(text=f"Next refresh in: {minutes}:{seconds:02d}")
         if seconds_left > 0:
-            countdown_id = root.after(1000, set_refresh_countdown, seconds_left - 1)
+            minutes, seconds = divmod(seconds_left, 60)
+            next_refresh_label.config(text=f"Next refresh in: {minutes}:{seconds:02d}")
+            root.after(1000, set_refresh_countdown, seconds_left - 1)
         else:
             refresh_prices()
+            set_refresh_countdown(refresh_interval)
 
-    refresh_interval = config.get('refresh_interval', 180)
+    # Show the refresh button after displaying the prices
+    refresh_button.pack(pady=10)
+
+    refresh_interval = config.get('refresh_interval', 180)  # Default to 3 minutes
     refresh_prices()
+    set_refresh_countdown(refresh_interval)
 
 
 # Make the window draggable by clicking and dragging the custom title bar
@@ -170,40 +175,53 @@ close_button = tk.Button(title_bar, text="X", font=("Courier", 12, "bold"), bg="
                          relief="flat")
 close_button.pack(side="right", padx=10)
 
-# Main content area
-content_frame = tk.Frame(root, bg="black")
-content_frame.pack(fill="both", expand=True, padx=10, pady=10)
+# Frame for the selection page
+selection_frame = tk.Frame(root, bg="black")
+selection_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-instruction_label = tk.Label(content_frame, text="Select the cryptocurrencies you want to monitor:",
+instruction_label = tk.Label(selection_frame, text="Select the cryptocurrencies you want to monitor:",
                              font=("Courier", 12, "bold"), bg="black", fg="#00ff00")
 instruction_label.pack(pady=10)
 
 # Listbox for cryptocurrency selection
-listbox = tk.Listbox(content_frame, selectmode="multiple", height=20, exportselection=0, bg="black", fg="#00ff00",
+listbox = tk.Listbox(selection_frame, selectmode="multiple", height=20, exportselection=0, bg="black", fg="#00ff00",
                      font=("Courier", 12), selectbackground="#00ff00", selectforeground="black")
 for crypto in cryptocurrencies:
     listbox.insert(tk.END, crypto)
 listbox.pack(padx=10, pady=10)
 
 # "Get Prices" button
-submit_button = tk.Button(content_frame, text="Get Prices", font=("Courier", 12, "bold"), bg="#00ff00", fg="black",
+submit_button = tk.Button(selection_frame, text="Get Prices", font=("Courier", 12, "bold"), bg="#00ff00", fg="black",
                           relief="flat", command=on_submit)
 submit_button.pack(pady=10)
 
-result_label = tk.Label(content_frame, text="", justify="left", font=("Courier", 12), bg="black", fg="#00ff00")
+# Label for displaying the warning when no currencies are selected
+result_label = tk.Label(selection_frame, text="", justify="left", font=("Courier", 12), bg="black", fg="#00ff00")
 result_label.pack(pady=10)
 
-# Create frame for displaying prices - This frame will take the place of the selection elements
+# Frame for the price display page (initially hidden)
 price_frame = tk.Frame(root, bg="black")
 
+# Frame to hold the price data, centered
+price_display_frame = tk.Frame(price_frame, bg="black")
+price_display_frame.grid_columnconfigure(0, weight=1)
+price_display_frame.grid_columnconfigure(1, weight=1)
+price_display_frame.grid_columnconfigure(2, weight=1)
+price_display_frame.pack(fill="both", expand=True, pady=10, padx=10)
+
+# Center the price display within the window
+price_frame.pack_propagate(False)
+
 # Labels for refresh information
-last_refreshed_label = tk.Label(root, text="Last refreshed: N/A", font=("Courier", 10), bg="black", fg="#00ff00")
+last_refreshed_label = tk.Label(price_frame, text="Last refreshed: N/A", font=("Courier", 10), bg="black", fg="#00ff00")
 last_refreshed_label.pack(pady=5)
 
-next_refresh_label = tk.Label(root, text="Next refresh in: 3:00", font=("Courier", 10), bg="black", fg="#00ff00")
+next_refresh_label = tk.Label(price_frame, text="Next refresh in: 3:00", font=("Courier", 10), bg="black", fg="#00ff00")
 next_refresh_label.pack(pady=5)
 
-countdown_id = None
+# Manual refresh button
+refresh_button = tk.Button(price_frame, text="Manual Refresh", font=("Courier", 10, "bold"), bg="#00ff00", fg="black",
+                           relief="flat")
 
 # Bind the title bar for moving the window
 title_bar.bind("<Button-1>", start_move)
