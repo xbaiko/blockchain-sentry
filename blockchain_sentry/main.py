@@ -9,27 +9,14 @@ COINGECKO_API_URL = "https://api.coingecko.com/api/v3/simple/price"
 
 
 def load_config(config_file="config.yaml"):
-    """Load configuration from the given YAML file.
-
-    Args:
-        config_file (str): Path to the YAML configuration file.
-
-    Returns:
-        dict: A dictionary containing the configuration data.
-    """
+    """Load configuration from the given YAML file."""
     with open(config_file, "r") as file:
         config = yaml.safe_load(file)
     return config
 
 
 def get_crypto_prices(selected_coins, update_callback, update_time_callback):
-    """Fetch cryptocurrency prices from CoinGecko API and update the display.
-
-    Args:
-        selected_coins (list): List of selected cryptocurrency IDs.
-        update_callback (function): Function to update the price display.
-        update_time_callback (function): Function to update the last refreshed time.
-    """
+    """Fetch cryptocurrency prices from CoinGecko API and update the display."""
     if not selected_coins:
         return
 
@@ -76,38 +63,26 @@ def on_submit():
 
 
 def open_price_view(selected_coins):
-    """Updates the window to display cryptocurrency prices and sets up the refresh logic.
-
-    Args:
-        selected_coins (list): List of selected cryptocurrency IDs.
-    """
+    """Updates the window to display cryptocurrency prices and sets up the refresh logic."""
     root.title("BlockchainSentry - Price Monitor")
 
-    price_label = ttk.Label(root, text="", justify="left", font=("Arial", 12))
+    price_label = tk.Label(root, text="", justify="left", font=("Courier", 12), bg="black", fg="#00ff00")
     price_label.pack(pady=10, padx=10)
 
-    last_refreshed_label = ttk.Label(root, text="Last refreshed: N/A", font=("Arial", 10))
+    last_refreshed_label = tk.Label(root, text="Last refreshed: N/A", font=("Courier", 10), bg="black", fg="#00ff00")
     last_refreshed_label.pack(pady=5)
 
-    next_refresh_label = ttk.Label(root, text="Next refresh in: 3:00", font=("Arial", 10))
+    next_refresh_label = tk.Label(root, text="Next refresh in: 3:00", font=("Courier", 10), bg="black", fg="#00ff00")
     next_refresh_label.pack(pady=5)
 
     countdown_id = None
 
     def update_price_display(text):
-        """Updates the price display with the latest data.
-
-        Args:
-            text (str): The text to display in the price label.
-        """
+        """Updates the price display with the latest data."""
         price_label.config(text=text)
 
     def update_last_refreshed_time(text):
-        """Updates the last refreshed time label.
-
-        Args:
-            text (str): The last refreshed timestamp to display.
-        """
+        """Updates the last refreshed time label."""
         last_refreshed_label.config(text=text)
 
     def refresh_prices():
@@ -118,15 +93,12 @@ def open_price_view(selected_coins):
         get_crypto_prices(selected_coins, update_price_display, update_last_refreshed_time)
         set_refresh_countdown(refresh_interval)
 
-    refresh_button = ttk.Button(root, text="Manual Refresh", command=refresh_prices)
+    refresh_button = tk.Button(root, text="Manual Refresh", font=("Courier", 10, "bold"), bg="#00ff00", fg="black",
+                               relief="flat", command=refresh_prices)
     refresh_button.pack(pady=10)
 
     def set_refresh_countdown(seconds_left):
-        """Starts or updates the countdown to the next automatic refresh.
-
-        Args:
-            seconds_left (int): The remaining seconds until the next refresh.
-        """
+        """Starts or updates the countdown to the next automatic refresh."""
         nonlocal countdown_id
         minutes, seconds = divmod(seconds_left, 60)
         next_refresh_label.config(text=f"Next refresh in: {minutes}:{seconds:02d}")
@@ -146,22 +118,29 @@ cryptocurrencies = config.get('cryptocurrencies', [])
 if not cryptocurrencies:
     raise ValueError("No cryptocurrencies found in config.yaml")
 
-# Main application window
+# Main application window with Punk mode styling
 root = tk.Tk()
 root.title("Cryptocurrency Price Checker")
+root.configure(bg="black")  # Background color is black
 
-instruction_label = ttk.Label(root, text="Select the cryptocurrencies you want to monitor:")
+# Centering the window on the screen
+root.geometry("600x400+300+200")
+
+instruction_label = tk.Label(root, text="Select the cryptocurrencies you want to monitor:",
+                             font=("Courier", 12, "bold"), bg="black", fg="#00ff00")
 instruction_label.pack(pady=10)
 
-listbox = tk.Listbox(root, selectmode="multiple", height=15, exportselection=0)
+listbox = tk.Listbox(root, selectmode="multiple", height=15, exportselection=0, bg="black", fg="#00ff00",
+                     font=("Courier", 12), selectbackground="#00ff00", selectforeground="black")
 for crypto in cryptocurrencies:
     listbox.insert(tk.END, crypto)
 listbox.pack(padx=10, pady=10)
 
-submit_button = ttk.Button(root, text="Get Prices", command=on_submit)
+submit_button = tk.Button(root, text="Get Prices", font=("Courier", 12, "bold"), bg="#00ff00", fg="black",
+                          relief="flat", command=on_submit)
 submit_button.pack(pady=10)
 
-result_label = ttk.Label(root, text="", justify="left")
+result_label = tk.Label(root, text="", justify="left", font=("Courier", 12), bg="black", fg="#00ff00")
 result_label.pack(pady=10)
 
 root.mainloop()
