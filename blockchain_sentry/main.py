@@ -27,23 +27,22 @@ def get_crypto_prices(selected_coins, update_callback, update_time_callback):
         response.raise_for_status()
         data = response.json()
 
-        # Format price output to align all "$" signs vertically
         result_text = ""
         longest_coin = max(len(coin) for coin in selected_coins)  # Get the longest coin name for alignment
         for coin in selected_coins:
             coin_data = data.get(coin)
             if coin_data:
-                price = coin_data.get('usd')
-                result_text += f"{coin.capitalize().ljust(longest_coin)} : ${price:,.2f}\n"
+                price = f"${coin_data.get('usd'):,.2f}"  # Format price with commas and two decimal places
+                result_text += f"{coin.capitalize().ljust(longest_coin)} {price}\n"
             else:
-                result_text += f"{coin.capitalize().ljust(longest_coin)} : Price data not available\n"
+                result_text += f"{coin.capitalize().ljust(longest_coin)} Price data not available\n"
 
-        update_callback(result_text)
+        update_callback(result_text, data)  # Pass data for formatting
         last_refreshed_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         update_time_callback(f"Last refreshed: {last_refreshed_time}")
 
     except requests.exceptions.RequestException as e:
-        update_callback(f"Error fetching prices: {e}")
+        update_callback(f"Error fetching prices: {e}", {})
 
 
 def on_submit():
@@ -67,8 +66,8 @@ def open_price_view(selected_coins):
     """Updates the window to display cryptocurrency prices and sets up the refresh logic."""
     root.title("Blockchain Sentry")
 
-    price_label = tk.Label(root, text="", justify="left", font=("Courier", 12), bg="black", fg="#00ff00")
-    price_label.pack(pady=10, padx=10)
+    price_frame = tk.Frame(root, bg="black")
+    price_frame.pack(pady=10, padx=10)
 
     last_refreshed_label = tk.Label(root, text="Last refreshed: N/A", font=("Courier", 10), bg="black", fg="#00ff00")
     last_refreshed_label.pack(pady=5)
@@ -78,9 +77,30 @@ def open_price_view(selected_coins):
 
     countdown_id = None
 
-    def update_price_display(text):
+    def update_price_display(text, data):
         """Updates the price display with the latest data."""
-        price_label.config(text=text)
+        # Clear existing content
+        for widget in price_frame.winfo_children():
+            widget.destroy()
+
+        longest_coin = max(len(coin) for coin in selected_coins)
+        for coin in selected_coins:
+            coin_data = data.get(coin)
+            if coin_data:
+                price = f"${coin_data.get('usd'):,.2f}"
+                # Display coin name and price next to each other
+                row_frame = tk.Frame(price_frame, bg="black")  # Create a new row for each coin-price pair
+                coin_label = tk.Label(row_frame, text=coin.capitalize().ljust(longest_coin), font=("Courier", 12),
+                                      bg="black", fg="#00ff00")
+                coin_label.pack(side="left")
+                price_label = tk.Label(row_frame, text=price, font=("Courier", 12, "bold"), bg="black", fg="white")
+                price_label.pack(side="left", padx=10)
+                row_frame.pack(anchor="w")  # Align left for each row
+            else:
+                coin_label = tk.Label(price_frame,
+                                      text=f"{coin.capitalize().ljust(longest_coin)} Price data not available",
+                                      font=("Courier", 12), bg="black", fg="#00ff00")
+                coin_label.pack(anchor="w")
 
     def update_last_refreshed_time(text):
         """Updates the last refreshed time label."""
