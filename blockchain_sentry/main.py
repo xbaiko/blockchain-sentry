@@ -1,4 +1,6 @@
-import tkinter as tk
+import ttkbootstrap as ttk
+from ttkbootstrap.constants import *
+import tkinter as tk  # Importiere tkinter für Widgets wie Listbox
 import requests
 import yaml
 from datetime import datetime
@@ -82,27 +84,22 @@ def open_price_view(selected_coins):
         for widget in price_display_frame.winfo_children():
             widget.destroy()
 
-        longest_coin = max(len(coin) for coin in selected_coins)
         for i, coin in enumerate(selected_coins):
             coin_data = data.get(coin)
             if coin_data:
                 price = f"${coin_data.get('usd'):,.2f}"
                 # Create labels for coin name, symbol, and price
-                coin_label = tk.Label(price_display_frame, text=coin.capitalize(), font=("Courier", 12), bg="black",
-                                      fg="#00ff00")
-                symbol_label = tk.Label(price_display_frame, text="⚡", font=("Courier", 12, "bold"), bg="black",
-                                        fg="#00ff00")  # Cyberpunk/crypto symbol
-                price_label = tk.Label(price_display_frame, text=price, font=("Courier", 12, "bold"), bg="black",
-                                       fg="white")
+                coin_label = ttk.Label(price_display_frame, text=coin.capitalize(), font=("Courier", 12), bootstyle="secondary")
+                symbol_label = ttk.Label(price_display_frame, text="⚡", font=("Courier", 12, "bold"), bootstyle="secondary")  # Cyberpunk/crypto symbol
+                price_label = ttk.Label(price_display_frame, text=price, font=("Courier", 12, "bold"), bootstyle="inverse")
 
                 # Place the labels in a grid, with reduced padding for tighter layout
-                coin_label.grid(row=i, column=0, padx=(40, 5), pady=5,
-                                sticky="e")  # Shift coin name slightly left, reduce right padding
+                coin_label.grid(row=i, column=0, padx=(40, 5), pady=5, sticky="e")  # Shift coin name slightly left, reduce right padding
                 symbol_label.grid(row=i, column=1, padx=5, pady=5)  # Reduce padding around the symbol
                 price_label.grid(row=i, column=2, padx=5, pady=5, sticky="w")  # Reduce padding for price
             else:
-                coin_label = tk.Label(price_display_frame, text=f"{coin.capitalize()} Price data not available",
-                                      font=("Courier", 12), bg="black", fg="#00ff00")
+                coin_label = ttk.Label(price_display_frame, text=f"{coin.capitalize()} Price data not available",
+                                      font=("Courier", 12), bootstyle="secondary")
                 coin_label.grid(row=i, column=0, columnspan=3, pady=5)
 
     def update_last_refreshed_time(text):
@@ -147,6 +144,18 @@ def do_move(event):
     root.geometry(f"+{root.winfo_x() + deltax}+{root.winfo_y() + deltay}")
 
 
+def minimize_window():
+    """Minimize the window and ensure it is in the taskbar."""
+    root.overrideredirect(False)  # Deaktiviert den benutzerdefinierten Modus
+    root.iconify()  # Minimiert das Fenster
+
+
+def restore_window(event=None):
+    """Restore the window with the custom title bar."""
+    root.deiconify()  # Stellt das Fenster wieder her
+    root.overrideredirect(True)  # Aktiviert den benutzerdefinierten Modus wieder
+
+
 # Load the config file
 config = load_config()
 cryptocurrencies = config.get('cryptocurrencies', [])
@@ -155,35 +164,37 @@ if not cryptocurrencies:
     raise ValueError("No cryptocurrencies found in config.yaml")
 
 # Main application window with custom title bar
-root = tk.Tk()
+root = ttk.Window(themename="darkly")  # Change the theme to something more minimalist (darkly theme fits the style)
 root.overrideredirect(True)  # Remove the OS title bar
-
-# Custom window size and background
+root.title("Blockchain Sentry")  # Window title
 root.geometry("800x600+300+200")
 root.configure(bg="black")
 
 # Custom title bar
-title_bar = tk.Frame(root, bg="#00ff00", relief="raised", bd=2)
+title_bar = ttk.Frame(root, style="success.TFrame", padding=2)
 title_bar.pack(side="top", fill="x")
 
 # Title in the custom title bar
-title_label = tk.Label(title_bar, text="Blockchain Sentry", font=("Courier", 12, "bold"), bg="#00ff00", fg="black")
+title_label = ttk.Label(title_bar, text="Blockchain Sentry", font=("Courier", 12, "bold"), bootstyle="success")
 title_label.pack(side="left", padx=10)
 
 # Close button in the custom title bar
-close_button = tk.Button(title_bar, text="X", font=("Courier", 12, "bold"), bg="#ff0000", fg="white", command=close_app,
-                         relief="flat")
+close_button = ttk.Button(title_bar, text="X", bootstyle="danger", command=close_app)
 close_button.pack(side="right", padx=10)
 
+# Minimize button in the custom title bar
+minimize_button = ttk.Button(title_bar, text="_", bootstyle="secondary", command=minimize_window)
+minimize_button.pack(side="right", padx=10)
+
 # Frame for the selection page
-selection_frame = tk.Frame(root, bg="black")
+selection_frame = ttk.Frame(root, padding=10)
 selection_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-instruction_label = tk.Label(selection_frame, text="Select the cryptocurrencies you want to monitor:",
-                             font=("Courier", 12, "bold"), bg="black", fg="#00ff00")
+instruction_label = ttk.Label(selection_frame, text="Select the cryptocurrencies you want to monitor:",
+                             font=("Courier", 12, "bold"), bootstyle="success")
 instruction_label.pack(pady=10)
 
-# Listbox for cryptocurrency selection
+# Listbox for cryptocurrency selection (kept from tkinter)
 listbox = tk.Listbox(selection_frame, selectmode="multiple", height=20, exportselection=0, bg="black", fg="#00ff00",
                      font=("Courier", 12), selectbackground="#00ff00", selectforeground="black")
 for crypto in cryptocurrencies:
@@ -191,41 +202,39 @@ for crypto in cryptocurrencies:
 listbox.pack(padx=10, pady=10)
 
 # "Get Prices" button
-submit_button = tk.Button(selection_frame, text="Get Prices", font=("Courier", 12, "bold"), bg="#00ff00", fg="black",
-                          relief="flat", command=on_submit)
+submit_button = ttk.Button(selection_frame, text="Get Prices", bootstyle="success-outline", command=on_submit)
 submit_button.pack(pady=10)
 
 # Label for displaying the warning when no currencies are selected
-result_label = tk.Label(selection_frame, text="", justify="left", font=("Courier", 12), bg="black", fg="#00ff00")
+result_label = ttk.Label(selection_frame, text="", font=("Courier", 12), bootstyle="warning")
 result_label.pack(pady=10)
 
 # Frame for the price display page (initially hidden)
-price_frame = tk.Frame(root, bg="black")
+price_frame = ttk.Frame(root, padding=10, bootstyle="dark")
 
 # Frame to hold the price data, centered
-price_display_frame = tk.Frame(price_frame, bg="black")
+price_display_frame = ttk.Frame(price_frame)
 price_display_frame.grid_columnconfigure(0, weight=1)
 price_display_frame.grid_columnconfigure(1, weight=1)
 price_display_frame.grid_columnconfigure(2, weight=1)
 price_display_frame.pack(fill="both", expand=True, pady=10, padx=10)
 
-# Center the price display within the window
-price_frame.pack_propagate(False)
-
 # Labels for refresh information
-last_refreshed_label = tk.Label(price_frame, text="Last refreshed: N/A", font=("Courier", 10), bg="black", fg="#00ff00")
+last_refreshed_label = ttk.Label(price_frame, text="Last refreshed: N/A", font=("Courier", 10), bootstyle="secondary")
 last_refreshed_label.pack(pady=5)
 
-next_refresh_label = tk.Label(price_frame, text="Next refresh in: 3:00", font=("Courier", 10), bg="black", fg="#00ff00")
+next_refresh_label = ttk.Label(price_frame, text="Next refresh in: 3:00", font=("Courier", 10), bootstyle="secondary")
 next_refresh_label.pack(pady=5)
 
 # Manual refresh button
-refresh_button = tk.Button(price_frame, text="Manual Refresh", font=("Courier", 10, "bold"), bg="#00ff00", fg="black",
-                           relief="flat")
+refresh_button = ttk.Button(price_frame, text="Manual Refresh", bootstyle="success")
 
 # Bind the title bar for moving the window
 title_bar.bind("<Button-1>", start_move)
 title_bar.bind("<ButtonRelease-1>", stop_move)
 title_bar.bind("<B1-Motion>", do_move)
+
+# Bind the root window to restore from minimization when clicked in the taskbar
+root.bind("<Map>", restore_window)
 
 root.mainloop()
